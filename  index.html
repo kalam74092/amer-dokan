@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#176b45">
+<title>আমার দোকান</title>
+<style>
+body{font-family:sans-serif;background:#eef5f0;margin:0;padding:16px;color:#222}
+.app{max-width:440px;margin:auto;background:white;padding:18px;border-radius:16px}
+h2{color:#176b45;text-align:center}
+label{display:block;margin-top:12px}
+input,button{box-sizing:border-box;width:100%;padding:12px;margin-top:6px;font-size:16px;border-radius:8px}
+input{border:1px solid #bbb}
+button{border:0;background:#176b45;color:white}
+.delete{background:#b3261e}
+li{padding:10px 0;border-bottom:1px solid #ddd}
+.total{font-size:19px;font-weight:bold;color:#176b45}
+.note{font-size:13px;color:#555}
+</style>
+</head>
+<body>
+<div class="app">
+<h2>আমার দোকান 🏪</h2>
+<label>পণ্যের নাম</label>
+<input id="name" placeholder="যেমন: চাল">
+<label>কেনার দাম (টাকা)</label>
+<input id="buy" type="number" min="0" placeholder="যেমন: 100">
+<label>বিক্রির দাম (টাকা)</label>
+<input id="sell" type="number" min="0" placeholder="যেমন: 150">
+<button onclick="addProduct()">পণ্য যোগ করো</button>
+<p id="message"></p>
+<h3>পণ্যের তালিকা</h3>
+<ul id="list"></ul>
+<p class="total" id="total">মোট লাভ: ০ টাকা</p>
+<button class="delete" onclick="clearProducts()">সব পণ্য মুছুন</button>
+<p class="note">তথ্য এই ব্রাউজারে সংরক্ষিত হয়। ব্রাউজারের তথ্য মুছে ফেললে তালিকা হারাতে পারে।</p>
+</div>
+<script>
+let products=[];
+try {
+ products=JSON.parse(localStorage.getItem("amarDokanProducts")||"[]");
+ if(!Array.isArray(products)) products=[];
+} catch(e){products=[];}
+
+function saveProducts(){
+ try{
+  localStorage.setItem("amarDokanProducts",JSON.stringify(products));
+  return true;
+ }catch(e){return false;}
+}
+function showProducts(){
+ const list=document.getElementById("list");
+ list.innerHTML="";
+ let total=0;
+ products.forEach((p,i)=>{
+  total+=p.profit;
+  const li=document.createElement("li");
+  const desc=p.profit>0?"লাভ: "+p.profit+" টাকা":
+  p.profit<0?"লোকসান: "+Math.abs(p.profit)+" টাকা":"লাভ-লোকসান নেই";
+  const text=document.createElement("div");
+  text.textContent=p.name+" — "+desc;
+  li.appendChild(text);
+  const btn=document.createElement("button");
+  btn.className="delete";
+  btn.textContent="এই পণ্য মুছুন";
+  btn.onclick=()=>deleteProduct(i);
+  li.appendChild(btn);
+  list.appendChild(li);
+ });
+ document.getElementById("total").textContent=
+  "মোট লাভ/লোকসান: "+total+" টাকা";
+}
+function addProduct(){
+ const name=document.getElementById("name").value.trim();
+ const b=document.getElementById("buy").value;
+ const s=document.getElementById("sell").value;
+ const msg=document.getElementById("message");
+ if(!name||b===""||s===""){
+  msg.textContent="সব ঘর পূরণ করুন।";return;
+ }
+ const buy=Number(b),sell=Number(s);
+ if(!Number.isFinite(buy)||!Number.isFinite(sell)||buy<0||sell<0){
+  msg.textContent="দাম সঠিকভাবে লিখুন।";return;
+ }
+ products.push({name:name,profit:sell-buy});
+ if(!saveProducts()){
+  products.pop();
+  msg.textContent="সংরক্ষণ হয়নি। অন্য ব্রাউজারে চেষ্টা করতে হবে।";
+  return;
+ }
+ showProducts();
+ msg.textContent="পণ্য যোগ ও সংরক্ষণ হয়েছে!";
+ document.getElementById("name").value="";
+ document.getElementById("buy").value="";
+ document.getElementById("sell").value="";
+}
+function deleteProduct(i){
+ const old=products.splice(i,1)[0];
+ if(!saveProducts()){products.splice(i,0,old);}
+ showProducts();
+}
+function clearProducts(){
+ if(confirm("সব পণ্য মুছে ফেলবেন?")){
+  const old=products;
+  products=[];
+  if(!saveProducts())products=old;
+  showProducts();
+ }
+}
+showProducts();
+</script>
+</body>
+</html>
